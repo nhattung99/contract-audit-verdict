@@ -1,0 +1,23 @@
+{
+  "kind": "illustrative; executed locally with mocked web and LLM responses; not a live chain assessment",
+  "assessment": {
+    "review_id": "1",
+    "contract_name": "Treasury v2",
+    "audit_firm": "ExampleSec",
+    "grade": "THOROUGH",
+    "overall_score": 85,
+    "confidence": 88,
+    "reasoning": "Report covers withdraw and setOwner with PoC and discloses scope, commit, tools and team.",
+    "missing_coverage": "[\"upgrade path not discussed\"]",
+    "gap_count": 1,
+    "source_readable": true,
+    "status": "ASSESSED",
+    "criteria": {
+      "coverage": 90,
+      "findings": 85,
+      "severity": 80,
+      "remediation": 75,
+      "methodology": 95
+    }
+  }
+}
