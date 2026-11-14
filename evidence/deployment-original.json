@@ -1,0 +1,142 @@
+{
+  "network": "studionet",
+  "contract_address": "0x695f6609d680A5cF1A0a2b283f63aB6176879206",
+  "verified_on": "2026-11-02",
+  "rpc_url": "https://studio.genlayer.com/api",
+  "verification": "Read-only RPC; no signed or state-changing transaction submitted",
+  "chain_id_response": {
+    "jsonrpc": "2.0",
+    "result": "0xf22f",
+    "id": 1
+  },
+  "deployed_schema_response": {
+    "jsonrpc": "2.0",
+    "result": {
+      "ctor": {
+        "params": [],
+        "kwparams": {}
+      },
+      "methods": {
+        "assess_audit": {
+          "params": [
+            [
+              "review_id",
+              "string"
+            ]
+          ],
+          "kwparams": {},
+          "readonly": false,
+          "ret": "null",
+          "payable": false
+        },
+        "get_assessment": {
+          "params": [
+            [
+              "review_id",
+              "string"
+            ]
+          ],
+          "kwparams": {},
+          "readonly": true,
+          "ret": "string"
+        },
+        "get_count": {
+          "params": [],
+          "kwparams": {},
+          "readonly": true,
+          "ret": "int"
+        },
+        "get_review": {
+          "params": [
+            [
+              "review_id",
+              "string"
+            ]
+          ],
+          "kwparams": {},
+          "readonly": true,
+          "ret": "string"
+        },
+        "invalidate_review": {
+          "params": [
+            [
+              "review_id",
+              "string"
+            ]
+          ],
+          "kwparams": {},
+          "readonly": false,
+          "ret": "null",
+          "payable": false
+        },
+        "list_reviews": {
+          "params": [
+            [
+              "grade_filter",
+              "string"
+            ]
+          ],
+          "kwparams": {},
+          "readonly": true,
+          "ret": "string"
+        },
+        "lookup_by_report": {
+          "params": [
+            [
+              "report_url",
+              "string"
+            ]
+          ],
+          "kwparams": {},
+          "readonly": true,
+          "ret": "string"
+        },
+        "submit_review": {
+          "params": [
+            [
+              "contract_name",
+              "string"
+            ],
+            [
+              "audit_firm",
+              "string"
+            ],
+            [
+              "report_url",
+              "string"
+            ],
+            [
+              "source_url",
+              "string"
+            ]
+          ],
+          "kwparams": {},
+          "readonly": false,
+          "ret": "string",
+          "payable": false
+        }
+      }
+    },
+    "id": 1
+  },
+  "live_reads": [
+    {
+      "method": "get_count",
+      "args": [],
+      "result": 0
+    },
+    {
+      "method": "list_reviews",
+      "args": [
+        ""
+      ],
+      "result": "{\"reviews\": []}"
+    }
+  ],
+  "source_identity": {
+    "status": "Deployed bytecode/source not retrieved; exact source match unverified",
+    "local_source_sha256": "98f859cb4774a235043f6def874cde666240778f542a011f8aad4d84c7fcedce",
+    "local_changes": "compact header; wildcard import on line 3; class renamed Contract; public API and scoring behavior unchanged",
+    "storage_exception": "Original u256 score schema retained by explicit owner instruction"
+  }
+}

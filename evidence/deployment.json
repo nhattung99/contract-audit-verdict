@@ -1,142 +1,41 @@
 {
   "network": "studionet",
-  "contract_address": "0x695f6609d680A5cF1A0a2b283f63aB6176879206",
-  "verified_on": "2026-11-02",
+  "chain_id": 61999,
+  "contract_address": "0xCe42245bD8B1fc7cA58d2F55026D3Eb01cf456d2",
+  "supersedes_contract_address": "0x695f6609d680A5cF1A0a2b283f63aB6176879206",
+  "verified_on": "2026-11-14",
   "rpc_url": "https://studio.genlayer.com/api",
-  "verification": "Read-only RPC; no signed or state-changing transaction submitted",
-  "chain_id_response": {
-    "jsonrpc": "2.0",
-    "result": "0xf22f",
-    "id": 1
+  "transaction_id": "0xceeaace03076b7563807a5573ac818c727377779737d780d6fd4f2e19ce80199",
+  "transaction_status": "FINALIZED",
+  "consensus_result": "MAJORITY_AGREE",
+  "execution_result": "SUCCESS",
+  "leader_only": false,
+  "initial_validators": 5,
+  "deployer": "0xe5B4F17f9a110914f424fDE7f94D54Ff8ca5aaEA",
+  "source_commit": "326456583fc4e0c9640eb8e705b96ef216854d26",
+  "source_url": "https://github.com/nhattung99/contract-audit-verdict/blob/326456583fc4e0c9640eb8e705b96ef216854d26/contracts/contract_audit_verdict.py",
+  "source_sha256": "8319e6f64a4fbd79968e7303e09da2245f8f0e5c5242fad6ca63a6f2618f354c",
+  "source_bytes": 20780,
+  "source_verification": {
+    "method": "gen_getContractCode",
+    "params": [
+      "0xCe42245bD8B1fc7cA58d2F55026D3Eb01cf456d2"
+    ],
+    "encoding": "base64",
+    "byte_for_byte_match": true,
+    "compared_with": [
+      "working-tree contract bytes",
+      "git show 326456583fc4e0c9640eb8e705b96ef216854d26:contracts/contract_audit_verdict.py",
+      "downloaded pinned raw GitHub source at https://raw.githubusercontent.com/nhattung99/contract-audit-verdict/326456583fc4e0c9640eb8e705b96ef216854d26/contracts/contract_audit_verdict.py"
+    ],
+    "github_byte_for_byte_match": true
   },
-  "deployed_schema_response": {
-    "jsonrpc": "2.0",
-    "result": {
-      "ctor": {
-        "params": [],
-        "kwparams": {}
-      },
-      "methods": {
-        "assess_audit": {
-          "params": [
-            [
-              "review_id",
-              "string"
-            ]
-          ],
-          "kwparams": {},
-          "readonly": false,
-          "ret": "null",
-          "payable": false
-        },
-        "get_assessment": {
-          "params": [
-            [
-              "review_id",
-              "string"
-            ]
-          ],
-          "kwparams": {},
-          "readonly": true,
-          "ret": "string"
-        },
-        "get_count": {
-          "params": [],
-          "kwparams": {},
-          "readonly": true,
-          "ret": "int"
-        },
-        "get_review": {
-          "params": [
-            [
-              "review_id",
-              "string"
-            ]
-          ],
-          "kwparams": {},
-          "readonly": true,
-          "ret": "string"
-        },
-        "invalidate_review": {
-          "params": [
-            [
-              "review_id",
-              "string"
-            ]
-          ],
-          "kwparams": {},
-          "readonly": false,
-          "ret": "null",
-          "payable": false
-        },
-        "list_reviews": {
-          "params": [
-            [
-              "grade_filter",
-              "string"
-            ]
-          ],
-          "kwparams": {},
-          "readonly": true,
-          "ret": "string"
-        },
-        "lookup_by_report": {
-          "params": [
-            [
-              "report_url",
-              "string"
-            ]
-          ],
-          "kwparams": {},
-          "readonly": true,
-          "ret": "string"
-        },
-        "submit_review": {
-          "params": [
-            [
-              "contract_name",
-              "string"
-            ],
-            [
-              "audit_firm",
-              "string"
-            ],
-            [
-              "report_url",
-              "string"
-            ],
-            [
-              "source_url",
-              "string"
-            ]
-          ],
-          "kwparams": {},
-          "readonly": false,
-          "ret": "string",
-          "payable": false
-        }
-      }
-    },
-    "id": 1
-  },
-  "live_reads": [
-    {
-      "method": "get_count",
-      "args": [],
-      "result": 0
-    },
-    {
-      "method": "list_reviews",
-      "args": [
-        ""
-      ],
-      "result": "{\"reviews\": []}"
+  "live_reads": {
+    "get_count": 0,
+    "list_reviews": {
+      "reviews": []
     }
-  ],
-  "source_identity": {
-    "status": "Deployed bytecode/source not retrieved; exact source match unverified",
-    "local_source_sha256": "98f859cb4774a235043f6def874cde666240778f542a011f8aad4d84c7fcedce",
-    "local_changes": "compact header; wildcard import on line 3; class renamed Contract; public API and scoring behavior unchanged",
-    "storage_exception": "Original u256 score schema retained by explicit owner instruction"
-  }
+  },
+  "owner_key_storage": "Dedicated test account key is held only in ignored local .env.studionet; never published",
+  "raw_source_url": "https://raw.githubusercontent.com/nhattung99/contract-audit-verdict/326456583fc4e0c9640eb8e705b96ef216854d26/contracts/contract_audit_verdict.py"
 }

@@ -46,7 +46,7 @@ The required consistency exception promotes SUPERFICIAL with no gaps to ADEQUATE
 
 ## Consensus design
 
-Validators independently repeat fetching and scoring. They accept a leader only when the grade matches exactly, overall differs by at most 5, and every criterion differs by at most 10. SUPERFICIAL requires at least one missing-coverage area on both sides. Confidence must fall in the same band: 0-34, 35-79, or 80-100. This agrees on the MEANING of the decision, not JSON format: a different headline grade is rejected even when both responses have valid JSON and identical keys. Numeric tolerances allow limited scoring variation within the same decision. Reasoning and gap text need not match word for word; the validator does not establish semantic agreement on individual gap descriptions or the source_readable flag. Direct-mode tests explicitly execute captured validator callbacks; direct execution alone is not a hosted multi-validator deployment test.
+Before any independent AI comparison, the validator requires integer numeric fields, parses missing_coverage as a JSON array of non-empty strings, and requires gap_count to equal its length. It recomputes the overall from the five leader criteria (including the no-gap floor), derives the grade and rejects any mismatch. UNASSESSABLE requires zero overall, criterion scores, confidence and gaps. Validators then independently repeat fetching and scoring. They accept a leader only when the grade matches exactly, overall differs by at most 5, and every criterion differs by at most 10. SUPERFICIAL requires at least one missing-coverage area on both sides. Confidence must fall in the same band: 0-34, 35-79, or 80-100. This agrees on the MEANING of the decision, not JSON format: a different headline grade is rejected even when both responses have valid JSON and identical keys. Numeric tolerances allow limited scoring variation within the same decision. Reasoning and gap text need not match word for word; the validator does not establish semantic agreement on individual gap descriptions or the source_readable flag. Direct-mode tests explicitly execute captured validator callbacks; direct execution alone is not a hosted multi-validator deployment test.
 
 ## Edge cases
 
@@ -79,13 +79,29 @@ See the official [Studio guide](https://docs.genlayer.com/developers/intelligent
 ## Deployment
 
 ```text
-CONTRACT_ADDRESS = 0x695f6609d680A5cF1A0a2b283f63aB6176879206
+CONTRACT_ADDRESS = 0xCe42245bD8B1fc7cA58d2F55026D3Eb01cf456d2
 NETWORK          = studionet
 ```
 
-Verified by read-only RPC on 2026-11-02 at `https://studio.genlayer.com/api`: chain ID `61999` (`0xf22f`), the deployed schema exposes all eight expected methods, `get_count()` returned `0`, and `list_reviews("")` returned `{"reviews": []}`. These are live read results; no assessment transaction was submitted. See [deployment evidence](evidence/deployment.json).
+The corrected deployment supersedes `0x695f6609d680A5cF1A0a2b283f63aB6176879206`. The old contract remains an unpatched historical instance and should not be used to verify the steward fix.
 
-The contract at this address was deployed by the project owner. The local file now uses the requested compact dependency header, line-3 wildcard import, and class name `Contract`; these changes preserve the public methods and assessment behavior. Byte-for-byte equality with deployed code has not been verified. Per the owner's explicit choice, score fields retain the original `u256` schema; only `next_id` uses `bigint`. This is a documented exception to the later bigint-only preference, avoiding an unapproved storage-schema migration.
+Verified on 2026-11-14 through `https://studio.genlayer.com/api`: chain ID `61999`, transaction `0xceeaace03076b7563807a5573ac818c727377779737d780d6fd4f2e19ce80199` is **FINALIZED**, consensus is **MAJORITY_AGREE**, and constructor execution is **SUCCESS**. It was deployed with five initial validators and leader_only=false. Live reads returned `get_count() == 0` and `list_reviews("") == {"reviews": []}`; no live audit assessment has been submitted.
+
+The source returned by `gen_getContractCode` was base64-decoded and compared byte-for-byte against the local contract, Git source bytes and the downloaded immutable [source commit 3264565](https://github.com/nhattung99/contract-audit-verdict/blob/326456583fc4e0c9640eb8e705b96ef216854d26/contracts/contract_audit_verdict.py). All **20,780 bytes match**. SHA-256:
+
+```text
+8319e6f64a4fbd79968e7303e09da2245f8f0e5c5242fad6ca63a6f2618f354c
+```
+
+Anyone can reproduce this read-only check without a wallet or dependencies:
+
+```sh
+python scripts/verify_deployment.py
+```
+
+See [current deployment evidence](evidence/deployment.json), [original deployment archive](evidence/deployment-original.json), and [steward response](STEWARD_RESPONSE.md).
+
+The original u256 score storage schema is retained per the owner's instruction; next_id uses bigint. The fix changes validator acceptance of inconsistent payloads, without changing the public API, grade boundaries, no-gap floor, or storage layout. The new instance has its own empty state and a dedicated test deployer/owner `0xe5B4F17f9a110914f424fDE7f94D54Ff8ca5aaEA`. Its private key is retained only in the ignored local `.env.studionet` file; it is not published.
 
 ### Illustrative worked example: executed locally with mocked evidence
 
@@ -114,7 +130,7 @@ Mocked AI criteria were 90/85/80/75/95, confidence 88, with `upgrade path not di
 - **Edge cases:** bad labels/URLs, absent IDs, double assessment, pending reads and unauthorized invalidation raise UserError. Unreadable evidence and web/LLM failures deliberately store an UNASSESSABLE result instead of raising; this distinguishes unavailable evidence from invalid transactions.
 - **Reusable primitive:** a shared assessment/lookup API can support DAO audit acceptance, protocol due diligence, and auditor reputation histories. No frontend, escrow or payout code is included.
 
-Minimal future behavior changes were identified but not applied to this deployment: enforce exact integer types instead of int coercion; verify leader arithmetic/grade/gap-count consistency (including non-negative gap counts); optionally require agreement on source readability; and harden the model prompt against instructions embedded in fetched pages. These change acceptance or verdict behavior and should be approved and tested before a fresh deployment. Current numeric tolerances can admit a leader with a slightly inconsistent average; raw reasoning and gap descriptions are retained as the leader's explanation, not independently verified claims.
+The steward-requested arithmetic, grade and gap-list consistency checks are implemented and deployed. Regression tests reject forged averages even inside the former +/-5 tolerance, incorrect grades, malformed gap lists, mismatched/negative counts, numeric coercions, and nonzero UNASSESSABLE results. Existing independent grade/criterion/confidence checks remain in place. Potential future changes include stricter LLM-input criterion parsing (leader payload fields already require exact integers), agreement on source readability, and additional prompt-injection hardening. Those broader changes remain outside this fix. Raw reasoning and gap descriptions remain the leader's explanation rather than independently matched text.
 
 Evidence is truncated, URLs can change, labels are not authenticated, and a THOROUGH report-quality grade is not a contract-safety guarantee. The no-gap promotion to ADEQUATE follows the original requested policy; changing that policy would require approval.
 
@@ -128,4 +144,4 @@ gltest tests/
 # Or: python -m pytest tests/test_contract_audit_verdict.py -v
 ```
 
-Tests use `direct_vm`, `direct_deploy`, `direct_alice`, and `direct_bob`, with mocked report/source fetches and model responses. `genlayer-test` automatically registers these fixtures. The fresh 0.29.2 wheel requires dictionary-shaped web mock responses. `tests/conftest.py` defers deletion of the SDK stdin backing file only for Windows sharing-violation error 32, then removes it after VM teardown; unrelated errors still propagate. No installed package edits are required. The clean-venv run on Windows with Python 3.12.10, pytest 9.2.0 and genlayer-test 0.29.2 passed all 54 tests, including explicit captured-validator execution. See [test results](evidence/test-results.md).
+Tests use `direct_vm`, `direct_deploy`, `direct_alice`, and `direct_bob`, with mocked report/source fetches and model responses. `genlayer-test` automatically registers these fixtures. The fresh 0.29.2 wheel requires dictionary-shaped web mock responses. `tests/conftest.py` defers deletion of the SDK stdin backing file only for Windows sharing-violation error 32, then removes it after VM teardown; unrelated errors still propagate. No installed package edits are required. The clean-venv run on Windows with Python 3.12.10, pytest 9.2.0 and genlayer-test 0.29.2 passed all 94 tests, including explicit captured-validator execution. See [test results](evidence/test-results.md).
