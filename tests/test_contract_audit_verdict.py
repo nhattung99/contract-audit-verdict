@@ -318,8 +318,8 @@ def test_invalidate_owner_only(direct_vm, direct_deploy, direct_alice, direct_bo
 
 
 @pytest.mark.parametrize("change,accepted", [
-    ({}, True), ({"overall_score": 85}, True), ({"overall_score": 86}, False),
-    ({"score_coverage": 90}, True), ({"score_coverage": 91}, False),
+    ({}, True), ({"overall_score": 85}, False), ({"overall_score": 86}, False),
+    ({"score_coverage": 90, "overall_score": 82}, True), ({"score_coverage": 91}, False),
     ({"grade": "ADEQUATE"}, False), ({"confidence": 79}, False),
     ({"score_findings": -1}, False),
 ])
@@ -366,6 +366,8 @@ def test_validator_checks_each_criterion(direct_vm, direct_deploy, direct_alice,
     leader = _payload()
     leader.update(grade="THOROUGH", overall_score=80, gap_count=1)
     leader[key] = 91
+    leader["overall_score"] = 82
+    leader["missing_coverage"] = json.dumps(leader["missing_coverage"])
     assert direct_vm.run_validator(leader_result=leader) is False
 
 
@@ -374,6 +376,7 @@ def test_validator_superficial_requires_both_gap_counts(direct_vm, direct_deploy
     _assess(c, direct_vm, direct_alice, _payload((20,) * 5))
     leader = _payload((20,) * 5)
     leader.update(grade="SUPERFICIAL", overall_score=20, gap_count=0)
+    leader["missing_coverage"] = json.dumps(leader["missing_coverage"])
     assert direct_vm.run_validator(leader_result=leader) is False
     leader["gap_count"] = 1
     assert direct_vm.run_validator(leader_result=leader) is True
@@ -394,3 +397,88 @@ def test_unknown_review_errors(direct_vm, direct_deploy, method):
     c = direct_deploy("contracts/contract_audit_verdict.py")
     with direct_vm.expect_revert("Review not found"):
         getattr(c, method)("999")
+
+
+def _leader_payload(scores=(80, 80, 80, 80, 80), gaps=None):
+    gaps = ["upgrade path not discussed"] if gaps is None else gaps
+    p = _payload(scores, missing_coverage=json.dumps(gaps))
+    overall = sum(scores) // 5
+    if overall < 40 and not gaps:
+        overall = 40
+    grade = "THOROUGH" if overall >= 75 else "ADEQUATE" if overall >= 40 else "SUPERFICIAL"
+    p.update(overall_score=overall, grade=grade, gap_count=len(gaps), source_readable=True)
+    return p
+
+
+@pytest.mark.parametrize("change", [
+    {"overall_score": 79}, {"overall_score": 81},
+    {"grade": "ADEQUATE"}, {"grade": "SUPERFICIAL"},
+    {"gap_count": 0}, {"gap_count": 2}, {"gap_count": -1},
+    {"missing_coverage": "not json"}, {"missing_coverage": "{}"},
+    {"missing_coverage": "null"}, {"missing_coverage": '[""]'},
+    {"missing_coverage": '["   "]'}, {"missing_coverage": '[3]'},
+    {"missing_coverage": '[null]'}, {"missing_coverage": '[true]'},
+    {"missing_coverage": ["upgrade path not discussed"]},
+    {"missing_coverage": None},
+    {"overall_score": "80"}, {"overall_score": True},
+    {"score_coverage": "80"}, {"score_coverage": True},
+    {"gap_count": "1"}, {"gap_count": True},
+    {"confidence": "85"},
+])
+def test_validator_rejects_inconsistent_leader_before_nondet(
+        direct_vm, direct_deploy, direct_alice, monkeypatch, change):
+    c = direct_deploy("contracts/contract_audit_verdict.py")
+    _assess(c, direct_vm, direct_alice)
+    leader = _leader_payload()
+    leader.update(change)
+    import genlayer
+    def must_not_call(*args, **kwargs):
+        pytest.fail("Invalid payload reached independent assessment")
+    monkeypatch.setattr(genlayer.gl.nondet.web, "render", must_not_call)
+    monkeypatch.setattr(genlayer.gl.nondet, "exec_prompt", must_not_call)
+    assert direct_vm.run_validator(leader_result=leader) is False
+
+
+@pytest.mark.parametrize("scores,gaps,grade,overall", [
+    ((75,) * 5, ["gap"], "THOROUGH", 75),
+    ((74,) * 5, ["gap"], "ADEQUATE", 74),
+    ((40,) * 5, ["gap"], "ADEQUATE", 40),
+    ((39,) * 5, ["gap"], "SUPERFICIAL", 39),
+    ((10,) * 5, [], "ADEQUATE", 40),
+    ((0,) * 5, [], "ADEQUATE", 40),
+    ((39,) * 5, [], "ADEQUATE", 40),
+    ((71, 72, 73, 74, 76), ["gap"], "ADEQUATE", 73),
+])
+def test_validator_accepts_deterministic_boundaries_and_floor(
+        direct_vm, direct_deploy, direct_alice, scores, gaps, grade, overall):
+    c = direct_deploy("contracts/contract_audit_verdict.py")
+    _assess(c, direct_vm, direct_alice, _payload(scores, missing_coverage=gaps))
+    leader = _leader_payload(scores, gaps)
+    assert (leader["grade"], leader["overall_score"]) == (grade, overall)
+    assert direct_vm.run_validator(leader_result=leader) is True
+    leader["overall_score"] = overall + 1
+    assert direct_vm.run_validator(leader_result=leader) is False
+
+
+@pytest.mark.parametrize("score,accepted", [(85, True), (86, False)])
+def test_validator_retains_overall_tolerance_for_consistent_leaders(
+        direct_vm, direct_deploy, direct_alice, score, accepted):
+    c = direct_deploy("contracts/contract_audit_verdict.py")
+    _assess(c, direct_vm, direct_alice)
+    assert direct_vm.run_validator(leader_result=_leader_payload((score,) * 5)) is accepted
+
+
+@pytest.mark.parametrize("change,accepted", [
+    ({}, True), ({"overall_score": 1}, False),
+    ({"score_coverage": 1}, False), ({"confidence": 1}, False),
+    ({"missing_coverage": '["gap"]', "gap_count": 1}, False),
+    ({"grade": "SUPERFICIAL"}, False),
+])
+def test_validator_unassessable_invariants(
+        direct_vm, direct_deploy, direct_alice, change, accepted):
+    c = direct_deploy("contracts/contract_audit_verdict.py")
+    _assess(c, direct_vm, direct_alice, report="")
+    leader = _leader_payload((0,) * 5, [])
+    leader.update(grade="UNASSESSABLE", overall_score=0, confidence=0)
+    leader.update(change)
+    assert direct_vm.run_validator(leader_result=leader) is accepted

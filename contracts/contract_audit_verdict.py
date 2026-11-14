@@ -269,17 +269,55 @@ class Contract(gl.Contract):
             leader_grade = lp.get("grade")
             if leader_grade not in valid_grades:
                 return False
-            try:
-                l_overall = int(lp.get("overall_score"))
-                l_conf = int(lp.get("confidence"))
-                l_scores = {k: int(lp.get(k)) for k in keys}
-                l_gaps = int(lp.get("gap_count", 0))
-            except:
+            # Validate stored values before comparing independent AI scores.
+            # Coercion would hide malformed booleans, strings or decimals.
+            numeric_keys = keys + ["overall_score", "confidence", "gap_count"]
+            if any(type(lp.get(k)) is not int for k in numeric_keys):
                 return False
+            l_overall = lp["overall_score"]
+            l_conf = lp["confidence"]
+            l_scores = {k: lp[k] for k in keys}
+            l_gaps = lp["gap_count"]
             if not (0 <= l_overall <= 100): return False
             if not (0 <= l_conf <= 100): return False
             for k in keys:
                 if not (0 <= l_scores[k] <= 100): return False
+
+            # Storage represents missing coverage as a JSON array string.
+            missing_json = lp.get("missing_coverage")
+            if not isinstance(missing_json, str):
+                return False
+            try:
+                missing = json.loads(missing_json)
+            except Exception:
+                return False
+            if not isinstance(missing, list):
+                return False
+            if any(not isinstance(item, str) or not item.strip()
+                   for item in missing):
+                return False
+            if l_gaps != len(missing):
+                return False
+
+            if leader_grade == "UNASSESSABLE":
+                # Failure results have no scored evidence or coverage gaps.
+                if (l_overall != 0 or l_conf != 0 or l_gaps != 0
+                        or any(l_scores[k] != 0 for k in keys)):
+                    return False
+            else:
+                expected_overall = sum(l_scores[k] for k in keys) // 5
+                # Preserve the documented no-gap floor exactly.
+                if expected_overall < 40 and l_gaps == 0:
+                    expected_overall = 40
+                if expected_overall >= 75:
+                    expected_grade = "THOROUGH"
+                elif expected_overall >= 40:
+                    expected_grade = "ADEQUATE"
+                else:
+                    expected_grade = "SUPERFICIAL"
+                if (l_overall != expected_overall
+                        or leader_grade != expected_grade):
+                    return False
 
             try:
                 my = leader_fn()
